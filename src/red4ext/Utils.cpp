@@ -9,7 +9,7 @@ void Utils::CreateLogger()
     auto rootDir = GetRootDir();
     auto red4extDir = rootDir / L"red4ext";
     auto logsDir = red4extDir / L"logs";
-  spdlog::filename_t logFile = (logsDir / L"ctd_helper.log");
+  spdlog::filename_t logFile = (logsDir / L"vft_ripper.log");
 
     auto console = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
     auto file = std::make_shared<spdlog::sinks::basic_file_sink_mt>(logFile, true);
