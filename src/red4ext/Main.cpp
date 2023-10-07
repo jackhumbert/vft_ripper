@@ -68,19 +68,19 @@ bool GetVFTRVA(RED4ext::CGameApplication *app) {
   enum_ << "#pragma once" << std::endl << "// This file was generated automatically" << std::endl << std::endl;
   enum_ << "enum class RTTI_VFT : long {" << std::endl;
 
-  {
-    auto name = "resourceGameDepot_VFT";
-    auto rva = *reinterpret_cast<uintptr_t *>(app->unk118) - RED4ext::RelocBase::GetImageBase();
-    header << std::format("#define {}_Addr 0x{:X}", name, rva) << std::endl;
-    enum_ << std::format(" {} = 0x{:X},", name, rva) << std::endl;
-  }
+  // {
+  //   auto name = "resourceGameDepot_VFT";
+  //   auto rva = *reinterpret_cast<uintptr_t *>(app->unk118) - RED4ext::RelocBase::GetImageBase();
+  //   header << std::format("#define {}_Addr 0x{:X}", name, rva) << std::endl;
+  //   enum_ << std::format(" {} = 0x{:X},", name, rva) << std::endl;
+  // }
 
-  {
-    auto name = "CGameApplication_unk110_VFT";
-    auto rva = *reinterpret_cast<uintptr_t *>(app->unk110) - RED4ext::RelocBase::GetImageBase();
-    header << std::format("#define {}_Addr 0x{:X}", name, rva) << std::endl;
-    enum_ << std::format(" {} = 0x{:X},", name, rva) << std::endl;
-  }
+  // {
+  //   auto name = "CGameApplication_unk110_VFT";
+  //   auto rva = *reinterpret_cast<uintptr_t *>(app->unk110) - RED4ext::RelocBase::GetImageBase();
+  //   header << std::format("#define {}_Addr 0x{:X}", name, rva) << std::endl;
+  //   enum_ << std::format(" {} = 0x{:X},", name, rva) << std::endl;
+  // }
 
   header << "// From the RTTISystem" << std::endl;
   enum_ << "// From the RTTISystem" << std::endl;
