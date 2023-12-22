@@ -29,18 +29,37 @@ bool GetVFTRVA(RED4ext::CGameApplication *app) {
 
   std::map<std::string, uintptr_t> classNameToAddr;
 
-  for (const auto &cls : classes) {
+  for (const auto cls : classes) {
     if (cls && cls->name != "None") { // && !cls->flags.isAbstract) {
       if (cls->name == "inkInputKeyIconManager" || cls->name == "exEntitySpawner")
         continue;
       auto name = cls->name.ToString();
-      auto instance = cls->AllocMemory();
+      auto instance = (RED4ext::ISerializable *)cls->AllocMemory();
       cls->ConstructCls(instance);
       if (instance) {
         classNameToAddr.insert_or_assign(std::format("{}_VFT", name), *reinterpret_cast<uintptr_t *>(instance));
+        // RED4ext::CClass * base = cls;
+        // while (base->parent) {
+        //   base = base->parent;
+        // }
+        // if (base->GetName() == "ISerializable") {
+          // RED4ext::CClass * ptr = instance->GetNativeType();
+          // classNameToAddr.insert_or_assign(std::format("{}_Class_p", name), reinterpret_cast<uintptr_t>(&ptr));
+          // classNameToAddr.insert_or_assign(std::format("{}_Class_VFT", name), *reinterpret_cast<uintptr_t *>(cls));
+        // }
       }
+      auto cls_ptr = reinterpret_cast<uintptr_t>(cls);
       classNameToAddr.insert_or_assign(std::format("{}_Class_VFT", name), *reinterpret_cast<uintptr_t *>(cls));
-      classNameToAddr.insert_or_assign(std::format("{}_Class", name), reinterpret_cast<uintptr_t>(cls));
+      classNameToAddr.insert_or_assign(std::format("{}_Class", name), cls_ptr);
+      auto data_start = reinterpret_cast<uintptr_t*>(0x3221000 + RED4ext::RelocBase::GetImageBase());
+      auto data_end = reinterpret_cast<uintptr_t*>(0x4830000 + RED4ext::RelocBase::GetImageBase());
+      while (data_start < data_end) {
+        if (*data_start == cls_ptr) {
+          classNameToAddr.insert_or_assign(std::format("{}_Class_p", name), reinterpret_cast<uintptr_t>(data_start));
+          break;
+        }
+        data_start++;
+      }
     }
   }
   for (const auto &type : types) {
@@ -63,10 +82,12 @@ bool GetVFTRVA(RED4ext::CGameApplication *app) {
 
   std::stringstream header;
   std::stringstream enum_;
+  std::stringstream json;
 
   header << "#pragma once" << std::endl << "// This file was generated automatically" << std::endl << std::endl;
   enum_ << "#pragma once" << std::endl << "// This file was generated automatically" << std::endl << std::endl;
   enum_ << "enum class RTTI_VFT : long {" << std::endl;
+  json << "[" << std::endl;
 
   // {
   //   auto name = "resourceGameDepot_VFT";
@@ -83,22 +104,33 @@ bool GetVFTRVA(RED4ext::CGameApplication *app) {
   // }
 
   header << "// From the RTTISystem" << std::endl;
+  header << std::format("// Base address: 0x{:X}", RED4ext::RelocBase::GetImageBase()) << std::endl;
   enum_ << "// From the RTTISystem" << std::endl;
+  enum_ << std::format("// Base address: 0x{:X}", RED4ext::RelocBase::GetImageBase()) << std::endl;
 
-  for (const auto &pair : classNameAddrs) {
+  bool first = true;
+
+  for (auto &pair : classNameAddrs) {
     auto rva = pair.address - RED4ext::RelocBase::GetImageBase();
-    if (pair.address > RED4ext::RelocBase::GetImageBase() && rva < 0x4E9F000) { // where pdata starts
+    if (pair.address > RED4ext::RelocBase::GetImageBase() && rva < 0x4830000) { // where pdata starts
       header << std::format("#define {}_Addr 0x{:X}", pair.name, rva) << std::endl;
       enum_ << std::format(" {} = 0x{:X},", pair.name, rva) << std::endl;
+      if (first) {
+        first = false;
+      } else {
+        json << "," << std::endl;
+      }
+      json << std::format("\t{{\n\t\t\"symbol\": \"{}\",\n\t\t\"offset\": \"{:X}\" \n\t}}", pair.name, rva);
     } else {
-      header << std::format("// {} rva {} not within expected values", pair.name, rva) << std::endl;
-      enum_ << std::format("  // {} rva {} not within expected values", pair.name, rva) << std::endl;
+      header << std::format("// {}'s address 0x{:X} not within expected values", pair.name, pair.address) << std::endl;
+      // enum_ << std::format("  // {} rva 0x{:X} not within expected values", pair.name, rva) << std::endl;
     }
   }
 
   // classes.Clear();
 
   enum_ << "};" << std::endl;
+  json << std::endl << "]";
 
   std::ofstream headerFile(
       "C:/Users/Jack/Documents/cyberpunk/flight_control/deps/red4ext.sdk/include/RED4ext/Addresses-VFT.hpp");
@@ -109,6 +141,11 @@ bool GetVFTRVA(RED4ext::CGameApplication *app) {
       "C:/Users/Jack/Documents/cyberpunk/flight_control/deps/red4ext.sdk/include/RED4ext/Enum-VFT.hpp");
   enumFile << enum_.rdbuf();
   enumFile.close();
+
+  std::ofstream jsonFile(
+      "C:/Program Files (x86)/Steam/steamapps/common/Cyberpunk 2077/bin/x64/cyberpunk2077_classes.json");
+  jsonFile << json.rdbuf();
+  jsonFile.close();
 
   DebugBreak();
   return true;
