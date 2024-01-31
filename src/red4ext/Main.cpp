@@ -83,6 +83,7 @@ bool GetVFTRVA(RED4ext::CGameApplication *app) {
   std::stringstream header;
   std::stringstream enum_;
   std::stringstream json;
+  std::stringstream ida;
 
   header << "#pragma once" << std::endl << "// This file was generated automatically" << std::endl << std::endl;
   enum_ << "#pragma once" << std::endl << "// This file was generated automatically" << std::endl << std::endl;
@@ -121,6 +122,7 @@ bool GetVFTRVA(RED4ext::CGameApplication *app) {
         json << "," << std::endl;
       }
       json << std::format("\t{{\n\t\t\"symbol\": \"{}\",\n\t\t\"offset\": \"{:X}\" \n\t}}", pair.name, rva);
+      ida << std::format("// START_DECL VTABLE {}\n{}\n// END_DECL\n", rva, pair.name);
     } else {
       header << std::format("// {}'s address 0x{:X} not within expected values", pair.name, pair.address) << std::endl;
       // enum_ << std::format("  // {} rva 0x{:X} not within expected values", pair.name, rva) << std::endl;
@@ -146,6 +148,12 @@ bool GetVFTRVA(RED4ext::CGameApplication *app) {
       "C:/Program Files (x86)/Steam/steamapps/common/Cyberpunk 2077/bin/x64/cyberpunk2077_classes.json");
   jsonFile << json.rdbuf();
   jsonFile.close();
+
+  std::ofstream idaFile(
+      "C:/Users/Jack/Documents/cyberpunk/IDA_Cyberpunk_2077/vfts.c");
+  idaFile << ida.rdbuf();
+  idaFile.close();
+  
 
   DebugBreak();
   return true;
